@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">subscribe</string>
+    <string name="menu">菜单</string>
+    <string name="server">服务列表</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="currentPage">当前页面</string>
+    <string name="subscribe_btn">订阅按钮</string>
+
+</resources>
