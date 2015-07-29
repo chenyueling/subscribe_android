@@ -24,7 +24,8 @@ public class NativeHttpClient {
     public enum RequestMethod {
         GET,
         POST,
-        DELETE
+        DELETE,
+        PUT
     }
 
     public static String get(String url) throws HttpRequestException {
@@ -34,6 +35,9 @@ public class NativeHttpClient {
 
     public static String post(String url, String content) throws HttpRequestException {
         return _request(url, content, RequestMethod.POST, null);
+    }
+    public static String delete(String url, String content) throws HttpRequestException {
+        return _request(url, content, RequestMethod.DELETE, null);
     }
 
     public static Builder request(String url) {
@@ -65,7 +69,7 @@ public class NativeHttpClient {
                     conn.setRequestProperty(key, headers.get(key));
                 }
             }
-
+            byte[] data;
             switch (method) {
                 case GET:
                     conn.setDoOutput(false);
@@ -73,11 +77,14 @@ public class NativeHttpClient {
                 case POST:
                     conn.setDoOutput(true);
                     conn.setRequestProperty("Content-Type", CONTENT_TYPE_JSON);
-                    byte[] data = content.getBytes(CHARSET);
+                    data = content.getBytes(CHARSET);
                     conn.setRequestProperty("Content-Length", String.valueOf(data.length));
                     out = conn.getOutputStream();
                     out.write(data);
                     out.flush();
+                    break;
+                case DELETE:
+                    conn.setDoOutput(false);
                     break;
                 default:
                     // Could not have happened, ignore
@@ -134,6 +141,11 @@ public class NativeHttpClient {
 
         public Builder setGet() {
             this.method = RequestMethod.GET;
+            return this;
+        }
+
+        public Builder setDelete() {
+            this.method = RequestMethod.DELETE;
             return this;
         }
 

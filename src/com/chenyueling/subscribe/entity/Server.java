@@ -14,6 +14,8 @@ public class Server {
     //备注
     private String tip;
     private String userName;
+    //用户是否关注
+    private boolean subscribeStatus;
 
     public Server() {
     }
@@ -73,5 +75,13 @@ public class Server {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public boolean isSubscribeStatus() {
+        return subscribeStatus;
+    }
+
+    public void setSubscribeStatus(boolean subscribeStatus) {
+        this.subscribeStatus = subscribeStatus;
     }
 }

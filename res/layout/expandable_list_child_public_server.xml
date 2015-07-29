@@ -18,7 +18,7 @@
             android:minHeight="33dp"
             android:textSize="18sp"
             android:gravity="center_vertical"
-
+            android:padding="5dp"
             />
 
         <TextView
@@ -29,6 +29,8 @@
                 android:textColor="@color/timeColor"
                 android:text="@string/action_settings"
                 android:textSize="13sp"
+                android:paddingLeft="5dp"
+                android:paddingRight="0dp"
                 />
 
     </RelativeLayout>
@@ -43,8 +45,9 @@
                android:layout_width="20dp"
                android:layout_height="20dp"
                android:contentDescription="@drawable/add"
-               android:src="@drawable/add"
+               android:src="@drawable/btn_style"
                android:layout_gravity="center_horizontal"
+               android:id="@+id/expandable_list_child_public_server_subscribe_btn"
                />
 
     </LinearLayout>

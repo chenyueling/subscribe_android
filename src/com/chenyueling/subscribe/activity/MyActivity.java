@@ -2,23 +2,20 @@ package com.chenyueling.subscribe.activity;
 
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
-import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.ListView;
 import android.widget.Toast;
 import com.chenyueling.subscribe.ArticleListAdapter;
+import com.chenyueling.subscribe.MyListView;
 import com.chenyueling.subscribe.R;
 import com.chenyueling.subscribe.common.ConfigHelper;
 import com.chenyueling.subscribe.entity.Article;
+import com.chenyueling.subscribe.service.UserManager;
 import com.chenyueling.subscribe.utils.HttpRequestException;
 import com.chenyueling.subscribe.utils.NativeHttpClient;
 import com.google.gson.Gson;
@@ -27,33 +24,34 @@ import com.google.gson.reflect.TypeToken;
 import java.util.ArrayList;
 
 
-public class MyActivity extends Activity implements AdapterView.OnItemClickListener ,AbsListView.OnScrollListener{
+public class MyActivity extends Activity implements AdapterView.OnItemClickListener{
     /**
      * Called when the activity is first created.
      */
 
     private MyActivity context = null;
-    ListView listView = null;
-    private ArrayList<Article> articles = new ArrayList<Article>();
-    private ArrayList<Article> moreList = null;
-    private ArticleListAdapter articleListAdapter;
-    private int FINISH = 1;
-    private int SCROLL = 2;
+    MyListView listView = null;
+    private static ArrayList<Article> articles = new ArrayList<Article>();
+    private static ArrayList<Article> articlesTemp = new ArrayList<Article>();
+    private static ArrayList<Article> moreList = null;
+    private static ArticleListAdapter articleListAdapter;
+    private static final int FINISH = 1;
+    private static final int  SCROLL= 2;
 
 
     private Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
             if(msg.what == FINISH) {
-                articleListAdapter = new ArticleListAdapter(articles, context);
-                listView.setAdapter(articleListAdapter);
+                articleListAdapter.notifyDataSetChanged();
                 listView.setOnItemClickListener(context);
-                listView.setOnScrollListener(context);
+
             }
 
             if(msg.what == SCROLL) {
+                Toast.makeText(context,"refresh finish",Toast.LENGTH_LONG).show();
                 articleListAdapter.notifyDataSetChanged();
-                System.out.println(articles.size());
+                listView.onRefreshComplete();
                 //listView.deferNotifyDataSetChanged();
             }
         }
@@ -68,45 +66,41 @@ public class MyActivity extends Activity implements AdapterView.OnItemClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         context = this;
-        listView = (ListView) findViewById(R.id.listView);
-        TelephonyManager tm = (TelephonyManager) this.getSystemService(TELEPHONY_SERVICE);
-        String imei = tm.getDeviceId();
-
-        SharedPreferences sharedPreferences =  this.getSharedPreferences(ConfigHelper.SUBSCRIBE, Context.MODE_PRIVATE);
-        String deviceCode = sharedPreferences.getString(ConfigHelper.SUBSCRIBE,ConfigHelper.KYE_DEVICE_CODE);
+        listView = (MyListView) findViewById(R.id.listView);
+        //init UserManager Context
+        articleListAdapter = new ArticleListAdapter(articles, context);
+        listView.setAdapter(articleListAdapter);
+        String deviceCode = UserManager.getInstance(this).getUserDeviceCode();
+        Toast.makeText(context,"you deviceCode: " + deviceCode,Toast.LENGTH_LONG).show();
         if(deviceCode == null || "".equals(deviceCode)){
-            //UserManager.getInstance().register(this);
+            UserManager.getInstance(this).register();
         }
 
-        Toast.makeText(this, imei, Toast.LENGTH_LONG).show();
-        Thread thread = new Thread() {
-            @Override
-            public void run(){
-                super.run();
-                String url = ConfigHelper.host +":"+ConfigHelper.port+"/jersey-jetty/rest/device/articles/subscribe_list?sort=createTime&order=desc&p=1&r=1000&deviceCode=3";
-                try {
-                   String json =  NativeHttpClient.get(url);
-                    Gson gson = new Gson();
-                    articles = gson.fromJson(json, new TypeToken<ArrayList<Article>>() {}.getType());
-                    handler.sendEmptyMessage(FINISH);
-                } catch (HttpRequestException e) {
-                    e.printStackTrace();
-
-                }
-            }
-        };
-        thread.setContextClassLoader(getClass().getClassLoader());
-        thread.start();
 
 
+
+        if ((deviceCode != null || "".equals(deviceCode)) && (articles == null || articles.size() == 0)){
+            Toast.makeText(this,"Article NULL",Toast.LENGTH_SHORT).show();
+            getArticles(deviceCode);
+        }
         findViewById(R.id.titleBarAddBtn1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
                 intent.setClass(MyActivity.this ,ServerActivity.class);
                 startActivity(intent);
+                ((MyActivity)context).finish();
             }
         });
+
+        listView.setonRefreshListener(new MyListView.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                String dc = UserManager.getInstance(context).getUserDeviceCode();
+                refreshArticles(dc);
+            }
+        });
+        ;
 
     }
 
@@ -117,36 +111,52 @@ public class MyActivity extends Activity implements AdapterView.OnItemClickListe
     }
 
 
-    @Override
-    public void onScrollStateChanged(AbsListView absListView, int i) {
-        /*Log.d("onScrollStateChanged","scrolling" + i);
-        System.out.println("scrolling" + i);*/
+
+    private void refreshArticles(final String deviceCode) {
+        Thread thread = new Thread() {
+            @Override
+            public void run(){
+                super.run();
+                String url = ConfigHelper.subscribeArticles+"?sort=createTime&order=desc&p=1&r=1000&deviceCode=" + deviceCode;
+                try {
+                    String json =  NativeHttpClient.get(url);
+                    Gson gson = new Gson();
+                    articlesTemp = gson.fromJson(json, new TypeToken<ArrayList<Article>>() {}.getType());
+                    articles.clear();
+                    articles.addAll(articlesTemp);
+                    handler.sendEmptyMessage(SCROLL);
+                } catch (HttpRequestException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        thread.setContextClassLoader(getClass().getClassLoader());
+        thread.start();
     }
 
-    @Override
-    public void onScroll(AbsListView absListView, int i, int i2, int i3) {
-        /*Log.d("onScroll","scrolling" + i);
-        System.out.println("onScroll" + i);
+
+    private void getArticles(final String deviceCode){
 
         Thread thread = new Thread() {
             @Override
             public void run(){
                 super.run();
-                String url = "http://192.168.1.219:8080/jersey-jetty/rest/device/articles/subscribe_list?sort=createTime&order=desc&p=1&r=3&deviceCode=3";
+                String url = ConfigHelper.subscribeArticles+"?sort=createTime&order=desc&p=1&r=1000&deviceCode=" + deviceCode;
                 try {
                     String json =  NativeHttpClient.get(url);
                     Gson gson = new Gson();
-                    moreList = gson.fromJson(json, new TypeToken<ArrayList<Article>>() {}.getType());
-                    articles.addAll(moreList);
-                    handler.sendEmptyMessage(SCROLL);
+                    articlesTemp = gson.fromJson(json, new TypeToken<ArrayList<Article>>() {}.getType());
+                    articles.addAll(articlesTemp);
+                    handler.sendEmptyMessage(FINISH);
                 } catch (HttpRequestException e) {
                     e.printStackTrace();
-
                 }
             }
         };
         thread.setContextClassLoader(getClass().getClassLoader());
-        thread.start();*/
+        thread.start();
 
     }
+
+
 }

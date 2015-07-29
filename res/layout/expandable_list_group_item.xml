@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
+              android:orientation="horizontal"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:minHeight="50dp">
-    <TextView android:layout_width="match_parent" android:layout_height="match_parent"
+    <TextView
+            android:layout_width="0dp"
+              android:layout_weight="8"
+              android:layout_height="match_parent"
             android:id="@+id/server_group_name"
               android:layout_marginStart="40dp"
               android:layout_marginTop="15dp"
 
-
             />
+
+    <!--<ImageView android:layout_width="0dp"
+               android:layout_weight="2"
+               android:layout_height="match_parent"
+              android:id="@+id/server_group_refresh_btn"
+               android:layout_marginTop="10dp"
+               android:src="@drawable/refresh"
+               android:contentDescription="@drawable/refresh"/>-->
 </LinearLayout>

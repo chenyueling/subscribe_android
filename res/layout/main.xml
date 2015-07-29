@@ -13,14 +13,15 @@
             android:baselineAligned="true"
             android:orientation="horizontal">
 
-        <TextView
+        <ImageView
                 android:id="@+id/titleBarEditBtn1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:layout_weight="0.06"
                 android:gravity="center"
-                android:textColor="@color/editBtn"
-                android:text="@string/menu"/>
+                android:src="@drawable/menu_main_page"
+                android:layout_margin="13dp"
+                android:contentDescription="@drawable/menu_main_page"/>
 
         <TextView
                 android:id="@+id/titleBarTextView1"
@@ -32,24 +33,32 @@
 
         <ImageView
                 android:id="@+id/titleBarAddBtn1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
                 android:layout_weight="0.06"
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
-                android:src="@drawable/add"
-                android:contentDescription="@drawable/add"/>
+                android:src="@drawable/main_icon_style"
+                android:contentDescription="@drawable/main_icon_style"/>
     </LinearLayout>
     <View
             android:layout_width="fill_parent"
             android:layout_height="5dp"
             android:background="?android:attr/listDivider" />
-    <ListView
+   <!-- <ListView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/listView" android:layout_gravity="center_horizontal"
-            android:divider="@color/line"
-            android:dividerHeight="1dp"/>
+            android:divider="?android:attr/listDivider"
+            android:dividerHeight="1dp"/>-->
+
+    <com.chenyueling.subscribe.MyListView android:layout_width="match_parent"
+                                          android:layout_height="wrap_content"
+        android:id="@+id/listView"
+        android:layout_gravity="center_horizontal"
+        android:divider="?android:attr/listDivider"
+        android:dividerHeight="1dp">
+    </com.chenyueling.subscribe.MyListView>
 
 
 </LinearLayout>

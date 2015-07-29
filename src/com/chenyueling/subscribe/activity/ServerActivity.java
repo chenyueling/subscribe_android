@@ -2,6 +2,7 @@ package com.chenyueling.subscribe.activity;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.database.DataSetObserver;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListAdapter;
 import android.widget.ExpandableListView;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,6 +22,7 @@ import com.chenyueling.subscribe.R;
 import com.chenyueling.subscribe.common.ConfigHelper;
 import com.chenyueling.subscribe.entity.Article;
 import com.chenyueling.subscribe.entity.Server;
+import com.chenyueling.subscribe.service.UserManager;
 import com.chenyueling.subscribe.utils.HttpRequestException;
 import com.chenyueling.subscribe.utils.JsonUtil;
 import com.chenyueling.subscribe.utils.NativeHttpClient;
@@ -38,6 +41,7 @@ public class ServerActivity extends Activity {
     private ArrayList<Server> publicServers = new ArrayList<Server>();
     private ArrayList<Server> privateServers = new ArrayList<Server>();
     private ArrayList<Server> subscribeServers = new ArrayList<Server>();
+    private ArrayList<Server> serversTemp;
     private LayoutInflater mInflater;
     private ArrayList<String> groups;
 
@@ -46,9 +50,6 @@ public class ServerActivity extends Activity {
     private final int PRIVATE_SERVER = 1;
     private final int SUBSCRIBE_SERVER = 2;
 
-    private boolean IS_PUBLIC_SERVER = false;
-    private boolean IS_PRIVATE_SERVER = false;
-    private boolean IS_SUBSCRIBE_SERVER = false;
 
     private final int PUBLIC_SERVER_SUCCESS = 11;
     private final int PUBLIC_SERVER_ERROR = 10;
@@ -66,34 +67,16 @@ public class ServerActivity extends Activity {
         @Override
         public void handleMessage(Message msg) {
             if(msg.what == PUBLIC_SERVER_SUCCESS) {
-               // myExpandableListAdapter.notifyDataSetChanged();
-                //myExpandableListAdapter.onGroupCollapsed(PUBLIC_SERVER);
-                //myExpandableListAdapter.onGroupExpanded(PUBLIC_SERVER);
-                IS_PUBLIC_SERVER = true;
-                Toast.makeText(context,"public finish" + publicServers.size(),Toast.LENGTH_LONG).show();
+                expandableListView.collapseGroup(PUBLIC_SERVER);
+                expandableListView.expandGroup(PUBLIC_SERVER);
             }
 
             if(msg.what == PRIVATE_SERVER_SUCCESS) {
-                //myExpandableListAdapter.notifyDataSetChanged();
-               // myExpandableListAdapter.onGroupCollapsed(PRIVATE_SERVER);
-               // myExpandableListAdapter.onGroupExpanded(PRIVATE_SERVER);
-                IS_PRIVATE_SERVER = true;
-                Toast.makeText(context,"private finish" + privateServers.size(),Toast.LENGTH_LONG).show();
             }
 
             if(msg.what == SUBSCRIBE_SERVER_SUCCESS) {
-               // myExpandableListAdapter.notifyDataSetChanged();
-               // myExpandableListAdapter.onGroupCollapsed(SUBSCRIBE_SERVER);
-                //myExpandableListAdapter.onGroupExpanded(SUBSCRIBE_SERVER);
-                IS_SUBSCRIBE_SERVER = true;
-                Toast.makeText(context,"subscribe finish" + subscribeServers.size(),Toast.LENGTH_LONG).show();
             }
 
-
-            if (IS_SUBSCRIBE_SERVER && IS_PRIVATE_SERVER && IS_PUBLIC_SERVER){
-                myExpandableListAdapter = new MyExpandableListAdapter(publicServers,privateServers,subscribeServers,context);
-                expandableListView.setAdapter(myExpandableListAdapter);
-            }
         }
     };
 
@@ -103,10 +86,23 @@ public class ServerActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.server);
         expandableListView = (ExpandableListView) findViewById(R.id.expandableListView);
+        myExpandableListAdapter = new MyExpandableListAdapter(publicServers,privateServers,subscribeServers,context);
+        expandableListView.setAdapter(myExpandableListAdapter);
+
+        ImageView back = (ImageView) findViewById(R.id.server_back_btn);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent=new Intent(ServerActivity.this,MyActivity.class);
+                startActivity(intent);
+                ((Activity)context).finish();
+            }
+        });
+
         publicServerData();
         privateServerData();
         subscribeServerData();
-        System.out.println("size: " + publicServers.size());
+
 
     }
 
@@ -126,12 +122,17 @@ public class ServerActivity extends Activity {
             @Override
             public void run() {
                 super.run();
-                String url = ConfigHelper.publicServer;
+                String dc = UserManager.getInstance(context).getUserDeviceCode();
+                String url = ConfigHelper.publicServer + "?deviceCode=" + dc;
 
                 try {
                     String json = NativeHttpClient.get(url);
                     Gson gson = new Gson();
-                    publicServers = gson.fromJson(json, new TypeToken<ArrayList<Server>>() {}.getType());
+                    serversTemp = gson.fromJson(json, new TypeToken<ArrayList<Server>>() {
+                    }.getType());
+
+                    publicServers.addAll(serversTemp);
+
                     handler.sendEmptyMessage(PUBLIC_SERVER_SUCCESS);
                 } catch (HttpRequestException e) {
                     e.printStackTrace();
@@ -140,7 +141,6 @@ public class ServerActivity extends Activity {
 
             }
         };
-
         thread.setContextClassLoader(getClass().getClassLoader());
         thread.start();
     }
@@ -161,12 +161,16 @@ public class ServerActivity extends Activity {
             @Override
             public void run() {
                 super.run();
-                String url = ConfigHelper.privateServer;
+                String dc = UserManager.getInstance(context).getUserDeviceCode();
+                String url = ConfigHelper.privateServer + "?deviceCode=" + dc;
 
                 try {
                     String json = NativeHttpClient.get(url);
                     Gson gson = new Gson();
-                    privateServers = gson.fromJson(json, new TypeToken<ArrayList<Server>>() {}.getType());
+                    serversTemp = gson.fromJson(json, new TypeToken<ArrayList<Server>>() {
+                    }.getType());
+
+                    privateServers.addAll(serversTemp);
                     handler.sendEmptyMessage(PRIVATE_SERVER_SUCCESS);
                 } catch (HttpRequestException e) {
                     e.printStackTrace();
@@ -195,12 +199,16 @@ public class ServerActivity extends Activity {
             @Override
             public void run() {
                 super.run();
-                String url = ConfigHelper.subscribeServer + "?deviceCode=3";
+                String dc = UserManager.getInstance(context).getUserDeviceCode();
+                String url = ConfigHelper.subscribeServer + "?deviceCode=" + dc;
 
                 try {
                     String json = NativeHttpClient.get(url);
                     Gson gson = new Gson();
-                    subscribeServers = gson.fromJson(json, new TypeToken<ArrayList<Server>>() {}.getType());
+                    serversTemp = gson.fromJson(json, new TypeToken<ArrayList<Server>>() {
+                    }.getType());
+
+                    subscribeServers.addAll(serversTemp);
                     handler.sendEmptyMessage(SUBSCRIBE_SERVER_SUCCESS);
                 } catch (HttpRequestException e) {
                     e.printStackTrace();

@@ -4,5 +4,60 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:minHeight="50dp">
+    <LinearLayout android:orientation="horizontal"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent">
+        <RelativeLayout android:layout_width="0dp"
+                        android:layout_weight="8"
+                        android:layout_height="match_parent"
+                        android:id="@+id/layoutBody">
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/expandable_list_child_public_server_name"
+                    android:minHeight="33dp"
+                    android:textSize="18sp"
+                    android:gravity="center_vertical"
+                    android:padding="5dp"
+                    />
 
+            <TextView
+                    android:layout_below="@+id/expandable_list_child_public_server_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="17dp"
+                    android:id="@+id/expandable_list_child_public_server_developer"
+                    android:textColor="@color/timeColor"
+                    android:text="@string/action_settings"
+                    android:textSize="13sp"
+                    android:paddingLeft="5dp"
+                    android:paddingRight="0dp"
+                    />
+
+        </RelativeLayout>
+
+        <LinearLayout android:layout_width="0dp"
+                      android:layout_height="match_parent"
+                      android:layout_weight="2"
+                      android:orientation="vertical"
+                      android:gravity="center|center_horizontal|center_vertical"
+                >
+            <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@drawable/del_style"
+                    android:src="@drawable/del_style"
+                    android:layout_gravity="center_horizontal"
+                    android:id="@+id/expandable_list_child_public_server_del_btn"
+                    />
+
+        </LinearLayout>
+
+
+
+
+    </LinearLayout>
+    <View
+            android:layout_width="fill_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider" />
 </LinearLayout>

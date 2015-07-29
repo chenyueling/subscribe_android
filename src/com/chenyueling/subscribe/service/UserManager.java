@@ -1,16 +1,20 @@
 package com.chenyueling.subscribe.service;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Message;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.widget.Toast;
 import com.chenyueling.subscribe.common.ConfigHelper;
 import com.chenyueling.subscribe.common.Result;
 import com.chenyueling.subscribe.utils.HttpRequestException;
 import com.chenyueling.subscribe.utils.JsonUtil;
 import com.chenyueling.subscribe.utils.NativeHttpClient;
+import com.chenyueling.subscribe.utils.PreferencesUtil;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -23,8 +27,7 @@ public class UserManager {
 
 
     private  String imei;
-    private  Context CONTEXT;
-    private  String DEVICECODE;
+    private static Context CONTEXT;
 
     private static int SUCCESS = 1;
 
@@ -34,11 +37,10 @@ public class UserManager {
         @Override
         public void handleMessage(Message msg) {
             if (msg.what == SUCCESS) {
-                SharedPreferences sharedPreferences =  CONTEXT.getSharedPreferences(ConfigHelper.SUBSCRIBE,Context.MODE_PRIVATE);
-                SharedPreferences.Editor edit = sharedPreferences.edit();
-                edit.putString(ConfigHelper.KYE_DEVICE_CODE,DEVICECODE);
+                PreferencesUtil.setString(CONTEXT,ConfigHelper.KYE_DEVICE_CODE,msg.obj+"");
+                Toast.makeText(CONTEXT,PreferencesUtil.getString(CONTEXT,ConfigHelper.KYE_DEVICE_CODE),Toast.LENGTH_SHORT).show();
             } else if (msg.what == ERROR) {
-
+                Toast.makeText(CONTEXT,"device register error",Toast.LENGTH_SHORT).show();
             }
         }
     };
@@ -46,18 +48,17 @@ public class UserManager {
         private UserManager() {
     }
 
-    public static UserManager getInstance() {
+    public static UserManager getInstance(Context context) {
+        CONTEXT = context;
         if(userManager == null){
             userManager = new UserManager();
         }
         return userManager;
     }
 
-    public  void register(Context context){
-
-
-        CONTEXT = context;
-        TelephonyManager tm = (TelephonyManager) CONTEXT.getSystemService(CONTEXT.TELEPHONY_SERVICE);
+    public  void register(){
+        System.out.println("register...");
+        TelephonyManager tm = (TelephonyManager) CONTEXT.getSystemService(Context.TELEPHONY_SERVICE);
         imei = tm.getDeviceId();
 
 
@@ -65,14 +66,18 @@ public class UserManager {
             @Override
             public void run(){
                 String url = ConfigHelper.registerDevice;
+                Map<String,String> param = new HashMap<String, String>();
+                param.put("imei",imei);
                 try {
-                    String json = NativeHttpClient.post(url, JsonUtil.toJson(imei));
+                    String json = NativeHttpClient.post(url, JsonUtil.toJson(param));
                     Result result = JsonUtil.format(json, Result.class);
-
+                    System.out.println("register" + json);
                     if("success".equals(result.getStatus())){
                         Log.d("imei",result.getData());
-                        DEVICECODE = result.getData();
-                        handler.sendEmptyMessage(SUCCESS);
+                        Message msg = Message.obtain();
+                        msg.what = SUCCESS;
+                        msg.obj = result.getData();
+                        handler.sendMessage(msg);
                     }
                 } catch (HttpRequestException e) {
                     e.printStackTrace();
@@ -81,7 +86,19 @@ public class UserManager {
         };
 
         thread.setContextClassLoader(ClassLoader.getSystemClassLoader());
-        thread.run();
+        thread.start();
 
+    }
+
+    /**
+     * GET DEVICE CODE
+     * @return dc
+     */
+    public String getUserDeviceCode(){
+        String dc = PreferencesUtil.getString(CONTEXT,ConfigHelper.KYE_DEVICE_CODE);
+        if(dc == null || "".equals(dc)){
+            register();
+        }
+        return dc;
     }
 }
